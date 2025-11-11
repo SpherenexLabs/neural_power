@@ -126,6 +126,7 @@ function App() {
       unsubscribeHistory();
       clearInterval(harmonicInterval);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateSineWaveData = (data) => {
