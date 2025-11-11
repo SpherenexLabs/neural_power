@@ -5,14 +5,14 @@ import { getAnalytics } from "firebase/analytics";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBi4imuMT5imCT-8IBULdyFqj-ZZtl68Do",
-  authDomain: "regal-welder-453313-d6.firebaseapp.com",
-  databaseURL: "https://regal-welder-453313-d6-default-rtdb.firebaseio.com",
-  projectId: "regal-welder-453313-d6",
-  storageBucket: "regal-welder-453313-d6.firebasestorage.app",
-  messagingSenderId: "981360128010",
-  appId: "1:981360128010:web:5176a72c013f26b8dbeff3",
-  measurementId: "G-T67CCEJ8LW"
+  apiKey: "AIzaSyBzXzocbdytn4N8vLrT-V2JYZ8pgqWrbC0",
+  authDomain: "self-balancing-7a9fe.firebaseapp.com",
+  databaseURL: "https://self-balancing-7a9fe-default-rtdb.firebaseio.com",
+  projectId: "self-balancing-7a9fe",
+  storageBucket: "self-balancing-7a9fe.firebasestorage.app",
+  messagingSenderId: "1044959372723",
+  appId: "1:1044959372723:web:7e1f73307107cf91ba97c6",
+  measurementId: "G-357J7ZXYED"
 };
 
 // Initialize Firebase

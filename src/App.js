@@ -32,7 +32,9 @@ function App() {
     distribution_on: 0,
     power_w: 0,
     voltage_v: 0,
-    ts: 0
+    ts: 0,
+    pf: 0,
+    state: "NORMAL"
   });
   const [historyData, setHistoryData] = useState([]);
   const [sineWaveData, setSineWaveData] = useState({
@@ -78,21 +80,31 @@ function App() {
 
   useEffect(() => {
     // Listen for live data changes
-    const liveDataRef = ref(database, '30_KS5306_Neural_Power/live');
+    const liveDataRef = ref(database, '38_AC_Power_Facter/live');
     const unsubscribeLive = onValue(liveDataRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        setLiveData(data);
-        updateSineWaveData(data);
-        updateHarmonicData(data);
-        updateMlPredictions(data);
-        updateThdHistory(data);
-        checkAlerts(data);
+        // Map new Firebase fields to existing format
+        const mappedData = {
+          current_a: data.I || 0,
+          voltage_v: data.V || 0,
+          power_w: data.Wate || 0,
+          distribution_on: data.relay || 0,
+          ts: data.millis || 0,
+          pf: data.PF || 0,
+          state: data.state || "NORMAL"
+        };
+        setLiveData(mappedData);
+        updateSineWaveData(mappedData);
+        updateHarmonicData(mappedData);
+        updateMlPredictions(mappedData);
+        updateThdHistory(mappedData);
+        checkAlerts(mappedData);
       }
     });
 
     // Listen for history data changes
-    const historyRef = ref(database, '30_KS5306_Neural_Power/history');
+    const historyRef = ref(database, '38_AC_Power_Facter/history');
     const unsubscribeHistory = onValue(historyRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -420,7 +432,7 @@ function App() {
               <div className="card-icon">⚡</div>
               <div className="card-content">
                 <h3>Current</h3>
-                <div className="card-value">{liveData.current_a.toFixed(4)}</div>
+                <div className="card-value">{(liveData.current_a || 0).toFixed(4)}</div>
                 <div className="card-unit">Amperes</div>
               </div>
             </div>
@@ -429,7 +441,7 @@ function App() {
               <div className="card-icon">🔋</div>
               <div className="card-content">
                 <h3>Voltage</h3>
-                <div className="card-value">{liveData.voltage_v.toFixed(4)}</div>
+                <div className="card-value">{(liveData.voltage_v || 0).toFixed(4)}</div>
                 <div className="card-unit">Volts</div>
               </div>
             </div>
@@ -438,7 +450,7 @@ function App() {
               <div className="card-icon">⚙️</div>
               <div className="card-content">
                 <h3>Power</h3>
-                <div className="card-value">{liveData.power_w.toFixed(4)}</div>
+                <div className="card-value">{(liveData.power_w || 0).toFixed(4)}</div>
                 <div className="card-unit">Watts</div>
               </div>
             </div>
@@ -446,8 +458,30 @@ function App() {
             <div className="data-card distribution">
               <div className="card-icon">🔌</div>
               <div className="card-content">
-                <h3>Distribution</h3>
-                <div className="card-value">{liveData.distribution_on}</div>
+                <h3>Power Factor</h3>
+                <div className="card-value">{(liveData.pf || 0).toFixed(4)}</div>
+                <div className="card-unit">PF</div>
+              </div>
+            </div>
+            
+            <div className="data-card distribution">
+              <div className="card-icon">📊</div>
+              <div className="card-content">
+                <h3>State</h3>
+                <div className="card-value">{liveData.state || 'N/A'}</div>
+                <div className="card-unit">Status</div>
+              </div>
+            </div>
+            
+            <div className="data-card distribution">
+              <div className="card-icon">💡</div>
+              <div className="card-content">
+                <h3>Relay</h3>
+                <div className="card-value">
+                  <span className={`status-badge ${liveData.distribution_on ? 'on' : 'off'}`}>
+                    {liveData.distribution_on ? 'ON' : 'OFF'}
+                  </span>
+                </div>
                 <div className="card-unit">Status</div>
               </div>
             </div>
@@ -462,7 +496,7 @@ function App() {
               <div className="harmonic-card">
                 <h3>Total THD</h3>
                 <div className={`thd-value ${harmonicData.totalTHD > 5 ? 'high' : 'normal'}`}>
-                  {harmonicData.totalTHD.toFixed(2)}%
+                  {(harmonicData.totalTHD || 0).toFixed(2)}%
                 </div>
               </div>
               <div className="harmonic-card">
@@ -488,15 +522,15 @@ function App() {
               <div className="ml-icon">🤖</div>
               <div className="ml-content">
                 <h3>Compensation Level</h3>
-                <div className="ml-value">{mlPredictions.compensationLevel.toFixed(1)}%</div>
-                <div className="ml-confidence">Confidence: {mlPredictions.confidence.toFixed(1)}%</div>
+                <div className="ml-value">{(mlPredictions.compensationLevel || 0).toFixed(1)}%</div>
+                <div className="ml-confidence">Confidence: {(mlPredictions.confidence || 0).toFixed(1)}%</div>
               </div>
             </div>
             <div className="ml-card">
               <div className="ml-icon">⏱️</div>
               <div className="ml-content">
                 <h3>Response Delay</h3>
-                <div className="ml-value">{mlPredictions.responseDelay.toFixed(1)}ms</div>
+                <div className="ml-value">{(mlPredictions.responseDelay || 0).toFixed(1)}ms</div>
                 <div className="ml-confidence">Predicted</div>
               </div>
             </div>
