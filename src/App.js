@@ -53,7 +53,7 @@ function App() {
       { order: 7, amplitude: 0.05, phase: 135, thd: 1.8 },
       { order: 9, amplitude: 0.03, phase: 180, thd: 0.9 },
     ],
-    totalTHD: 2.8
+    totalTHD: 0.95 // Initialize with Power Factor value
   });
   
   const [mlPredictions, setMlPredictions] = useState({
@@ -64,17 +64,17 @@ function App() {
   });
   
   const [thdHistory, setThdHistory] = useState([
-    // Initialize with some sample historical data
-    { time: '14:45:10', thd: 2.1, anomaly: false, isLive: false, timestamp: Date.now() - 900000 },
-    { time: '14:46:15', thd: 2.8, anomaly: false, isLive: false, timestamp: Date.now() - 840000 },
-    { time: '14:47:20', thd: 3.2, anomaly: false, isLive: false, timestamp: Date.now() - 780000 },
-    { time: '14:48:25', thd: 4.1, anomaly: false, isLive: false, timestamp: Date.now() - 720000 },
-    { time: '14:49:30', thd: 5.8, anomaly: true, isLive: false, timestamp: Date.now() - 660000 },
-    { time: '14:50:35', thd: 3.9, anomaly: false, isLive: false, timestamp: Date.now() - 600000 },
-    { time: '14:51:40', thd: 2.7, anomaly: false, isLive: false, timestamp: Date.now() - 540000 },
-    { time: '14:52:45', thd: 3.5, anomaly: false, isLive: false, timestamp: Date.now() - 480000 },
-    { time: '14:53:50', thd: 4.8, anomaly: false, isLive: false, timestamp: Date.now() - 420000 },
-    { time: '14:54:55', thd: 6.2, anomaly: true, isLive: false, timestamp: Date.now() - 360000 },
+    // Initialize with some sample historical data (Power Factor values)
+    { time: '14:45:10', thd: 0.92, anomaly: false, isLive: false, timestamp: Date.now() - 900000 },
+    { time: '14:46:15', thd: 0.89, anomaly: false, isLive: false, timestamp: Date.now() - 840000 },
+    { time: '14:47:20', thd: 0.95, anomaly: false, isLive: false, timestamp: Date.now() - 780000 },
+    { time: '14:48:25', thd: 0.87, anomaly: false, isLive: false, timestamp: Date.now() - 720000 },
+    { time: '14:49:30', thd: 0.82, anomaly: true, isLive: false, timestamp: Date.now() - 660000 },
+    { time: '14:50:35', thd: 0.88, anomaly: false, isLive: false, timestamp: Date.now() - 600000 },
+    { time: '14:51:40', thd: 0.93, anomaly: false, isLive: false, timestamp: Date.now() - 540000 },
+    { time: '14:52:45', thd: 0.91, anomaly: false, isLive: false, timestamp: Date.now() - 480000 },
+    { time: '14:53:50', thd: 0.86, anomaly: false, isLive: false, timestamp: Date.now() - 420000 },
+    { time: '14:54:55', thd: 0.79, anomaly: true, isLive: false, timestamp: Date.now() - 360000 },
   ]);
   const [alerts, setAlerts] = useState([]);
 
@@ -157,7 +157,8 @@ function App() {
       thd: Math.random() * 5 + 0.5
     }));
     
-    const totalTHD = Math.sqrt(newHarmonics.slice(1).reduce((sum, h) => sum + h.amplitude * h.amplitude, 0)) / newHarmonics[0].amplitude * 100;
+    // Use Power Factor (PF) instead of calculated THD
+    const totalTHD = data.pf || 0;
     
     setHarmonicData({
       harmonics: newHarmonics,
@@ -177,14 +178,14 @@ function App() {
 
   const updateThdHistory = (data) => {
     const time = new Date().toLocaleTimeString();
-    const currentTHD = harmonicData.totalTHD;
+    const currentTHD = data.pf || 0; // Use Power Factor instead of THD
     
     setThdHistory(prev => {
       const maxPoints = 50; // Increased to show more historical data
       const newEntry = { 
         time, 
         thd: currentTHD, 
-        anomaly: currentTHD > 5,
+        anomaly: currentTHD < 0.85, // Anomaly if PF is less than 0.85
         isLive: true,
         timestamp: Date.now()
       };
@@ -222,12 +223,12 @@ function App() {
       });
     }
     
-    // Check for high THD
-    if (harmonicData.totalTHD > 5) {
+    // Check for low Power Factor
+    if (harmonicData.totalTHD < 0.85) {
       newAlerts.push({
         id: Date.now() + 3,
         type: 'thd',
-        message: `High THD detected: ${harmonicData.totalTHD.toFixed(2)}%`,
+        message: `Low Power Factor detected: ${harmonicData.totalTHD.toFixed(2)}`,
         severity: 'high',
         timestamp: currentTime
       });
@@ -355,8 +356,8 @@ function App() {
         tension: 0.4,
       },
       {
-        label: 'THD Threshold (5%)',
-        data: Array(thdHistory.length).fill(5),
+        label: 'PF Threshold (0.85)',
+        data: Array(thdHistory.length).fill(0.85),
         borderColor: 'rgb(231, 76, 60)',
         borderDash: [5, 5],
         pointRadius: 0,
@@ -389,8 +390,8 @@ function App() {
             {liveData.distribution_on ? 'Distribution ON' : 'Distribution OFF'}
           </span>
           <div className="thd-indicator">
-            <span className={`thd-badge ${harmonicData.totalTHD > 5 ? 'high' : 'normal'}`}>
-              THD: {harmonicData.totalTHD.toFixed(2)}%
+            <span className={`thd-badge ${harmonicData.totalTHD < 0.85 ? 'high' : 'normal'}`}>
+              THD: {harmonicData.totalTHD.toFixed(2)}
             </span>
           </div>
         </div>
@@ -496,8 +497,8 @@ function App() {
             <div className="harmonic-overview">
               <div className="harmonic-card">
                 <h3>Total THD</h3>
-                <div className={`thd-value ${harmonicData.totalTHD > 5 ? 'high' : 'normal'}`}>
-                  {(harmonicData.totalTHD || 0).toFixed(2)}%
+                <div className={`thd-value ${harmonicData.totalTHD < 0.85 ? 'high' : 'normal'}`}>
+                  {(harmonicData.totalTHD || 0).toFixed(2)}
                 </div>
               </div>
               <div className="harmonic-card">
@@ -557,7 +558,7 @@ function App() {
               </div>
               <div className="legend-item">
                 <span className="legend-dot anomaly"></span>
-                <span>Anomaly (&gt;5%)</span>
+                <span>Anomaly (&lt;0.85)</span>
               </div>
               <div className="legend-item">
                 <span className="legend-dot normal"></span>
@@ -600,10 +601,10 @@ function App() {
                 },
                 y: {
                   beginAtZero: true,
-                  max: Math.max(8, Math.max(...thdHistory.map(item => item.thd)) + 1),
+                  max: 1.2,
                   title: {
                     display: true,
-                    text: 'THD (%)'
+                    text: 'Power Factor'
                   }
                 }
               }
