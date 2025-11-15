@@ -53,7 +53,7 @@ function App() {
       { order: 7, amplitude: 0.05, phase: 135, thd: 1.8 },
       { order: 9, amplitude: 0.03, phase: 180, thd: 0.9 },
     ],
-    totalTHD: 0.95 // Initialize with Power Factor value
+    totalTHD: 2.5 // Initialize with calculated THD percentage
   });
   
   const [mlPredictions, setMlPredictions] = useState({
@@ -64,17 +64,17 @@ function App() {
   });
   
   const [thdHistory, setThdHistory] = useState([
-    // Initialize with some sample historical data (Power Factor values)
-    { time: '14:45:10', thd: 0.92, anomaly: false, isLive: false, timestamp: Date.now() - 900000 },
-    { time: '14:46:15', thd: 0.89, anomaly: false, isLive: false, timestamp: Date.now() - 840000 },
-    { time: '14:47:20', thd: 0.95, anomaly: false, isLive: false, timestamp: Date.now() - 780000 },
-    { time: '14:48:25', thd: 0.87, anomaly: false, isLive: false, timestamp: Date.now() - 720000 },
-    { time: '14:49:30', thd: 0.82, anomaly: true, isLive: false, timestamp: Date.now() - 660000 },
-    { time: '14:50:35', thd: 0.88, anomaly: false, isLive: false, timestamp: Date.now() - 600000 },
-    { time: '14:51:40', thd: 0.93, anomaly: false, isLive: false, timestamp: Date.now() - 540000 },
-    { time: '14:52:45', thd: 0.91, anomaly: false, isLive: false, timestamp: Date.now() - 480000 },
-    { time: '14:53:50', thd: 0.86, anomaly: false, isLive: false, timestamp: Date.now() - 420000 },
-    { time: '14:54:55', thd: 0.79, anomaly: true, isLive: false, timestamp: Date.now() - 360000 },
+    // Initialize with some sample historical data (THD percentage values)
+    { time: '14:45:10', thd: 2.2, anomaly: false, isLive: false, timestamp: Date.now() - 900000 },
+    { time: '14:46:15', thd: 3.1, anomaly: false, isLive: false, timestamp: Date.now() - 840000 },
+    { time: '14:47:20', thd: 1.8, anomaly: false, isLive: false, timestamp: Date.now() - 780000 },
+    { time: '14:48:25', thd: 4.2, anomaly: false, isLive: false, timestamp: Date.now() - 720000 },
+    { time: '14:49:30', thd: 5.8, anomaly: true, isLive: false, timestamp: Date.now() - 660000 },
+    { time: '14:50:35', thd: 3.5, anomaly: false, isLive: false, timestamp: Date.now() - 600000 },
+    { time: '14:51:40', thd: 2.7, anomaly: false, isLive: false, timestamp: Date.now() - 540000 },
+    { time: '14:52:45', thd: 3.9, anomaly: false, isLive: false, timestamp: Date.now() - 480000 },
+    { time: '14:53:50', thd: 4.5, anomaly: false, isLive: false, timestamp: Date.now() - 420000 },
+    { time: '14:54:55', thd: 6.2, anomaly: true, isLive: false, timestamp: Date.now() - 360000 },
   ]);
   const [alerts, setAlerts] = useState([]);
 
@@ -157,8 +157,10 @@ function App() {
       thd: Math.random() * 5 + 0.5
     }));
     
-    // Use Power Factor (PF) instead of calculated THD
-    const totalTHD = data.pf || 0;
+    // Calculate Total Harmonic Distortion (THD) from harmonics
+    const sumOfSquares = newHarmonics.slice(1).reduce((sum, h) => sum + Math.pow(h.amplitude, 2), 0);
+    const fundamental = newHarmonics[0]?.amplitude || 1;
+    const totalTHD = Math.sqrt(sumOfSquares) / fundamental * 100;
     
     setHarmonicData({
       harmonics: newHarmonics,
@@ -178,14 +180,15 @@ function App() {
 
   const updateThdHistory = (data) => {
     const time = new Date().toLocaleTimeString();
-    const currentTHD = data.pf || 0; // Use Power Factor instead of THD
+    // Calculate THD from harmonic data
+    const currentTHD = harmonicData.totalTHD;
     
     setThdHistory(prev => {
       const maxPoints = 50; // Increased to show more historical data
       const newEntry = { 
         time, 
         thd: currentTHD, 
-        anomaly: currentTHD < 0.85, // Anomaly if PF is less than 0.85
+        anomaly: currentTHD > 5, // Anomaly if THD is greater than 5%
         isLive: true,
         timestamp: Date.now()
       };
