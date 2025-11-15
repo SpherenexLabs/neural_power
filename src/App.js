@@ -227,11 +227,11 @@ function App() {
     }
     
     // Check for low Power Factor
-    if (harmonicData.totalTHD < 0.85) {
+    if (harmonicData.totalTHD > 5) {
       newAlerts.push({
         id: Date.now() + 3,
         type: 'thd',
-        message: `Low Power Factor detected: ${harmonicData.totalTHD.toFixed(2)}`,
+        message: `High THD detected: ${harmonicData.totalTHD.toFixed(2)}%`,
         severity: 'high',
         timestamp: currentTime
       });
@@ -359,8 +359,8 @@ function App() {
         tension: 0.4,
       },
       {
-        label: 'PF Threshold (0.85)',
-        data: Array(thdHistory.length).fill(0.85),
+        label: 'THD Threshold (5%)',
+        data: Array(thdHistory.length).fill(5),
         borderColor: 'rgb(231, 76, 60)',
         borderDash: [5, 5],
         pointRadius: 0,
@@ -393,8 +393,8 @@ function App() {
             {liveData.distribution_on ? 'Distribution ON' : 'Distribution OFF'}
           </span>
           <div className="thd-indicator">
-            <span className={`thd-badge ${harmonicData.totalTHD < 0.85 ? 'high' : 'normal'}`}>
-              THD: {harmonicData.totalTHD.toFixed(2)}
+            <span className={`thd-badge ${harmonicData.totalTHD > 5 ? 'high' : 'normal'}`}>
+              THD: {harmonicData.totalTHD.toFixed(2)}%
             </span>
           </div>
         </div>
@@ -500,8 +500,8 @@ function App() {
             <div className="harmonic-overview">
               <div className="harmonic-card">
                 <h3>Total THD</h3>
-                <div className={`thd-value ${harmonicData.totalTHD < 0.85 ? 'high' : 'normal'}`}>
-                  {(harmonicData.totalTHD || 0).toFixed(2)}
+                <div className={`thd-value ${harmonicData.totalTHD > 5 ? 'high' : 'normal'}`}>
+                  {(harmonicData.totalTHD || 0).toFixed(2)}%
                 </div>
               </div>
               <div className="harmonic-card">
@@ -561,7 +561,7 @@ function App() {
               </div>
               <div className="legend-item">
                 <span className="legend-dot anomaly"></span>
-                <span>Anomaly (&lt;0.85)</span>
+                <span>Anomaly (&gt;5%)</span>
               </div>
               <div className="legend-item">
                 <span className="legend-dot normal"></span>
@@ -604,10 +604,10 @@ function App() {
                 },
                 y: {
                   beginAtZero: true,
-                  max: 1.2,
+                  max: 10,
                   title: {
                     display: true,
-                    text: 'Power Factor'
+                    text: 'THD (%)'
                   }
                 }
               }
