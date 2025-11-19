@@ -98,7 +98,6 @@ function App() {
         updateSineWaveData(mappedData);
         updateHarmonicData(mappedData);
         updateMlPredictions(mappedData);
-        updateThdHistory(mappedData);
         checkAlerts(mappedData);
       }
     });
@@ -166,6 +165,9 @@ function App() {
       harmonics: newHarmonics,
       totalTHD
     });
+    
+    // Update THD history with the calculated value
+    updateThdHistoryWithValue(totalTHD);
   };
 
   const updateMlPredictions = (data) => {
@@ -178,10 +180,8 @@ function App() {
     }));
   };
 
-  const updateThdHistory = (data) => {
+  const updateThdHistoryWithValue = (currentTHD) => {
     const time = new Date().toLocaleTimeString();
-    // Calculate THD from harmonic data
-    const currentTHD = harmonicData.totalTHD;
     
     setThdHistory(prev => {
       const maxPoints = 50; // Increased to show more historical data
