@@ -34,13 +34,21 @@ function App() {
     voltage_v: 0,
     ts: 0,
     pf: 0,
-    state: "NORMAL"
+    state: "NORMAL",
+    dc_current: 0,
+    dc_voltage: 0
   });
   const [historyData, setHistoryData] = useState([]);
   const [sineWaveData, setSineWaveData] = useState({
     current: [],
     voltage: [],
     power: [],
+    labels: []
+  });
+  
+  const [dcData, setDcData] = useState({
+    dc_current: [],
+    dc_voltage: [],
     labels: []
   });
   
@@ -92,10 +100,13 @@ function App() {
           distribution_on: data.relay || 0,
           ts: data.millis || 0,
           pf: data.PF || 0,
-          state: data.state || "NORMAL"
+          state: data.state || "NORMAL",
+          dc_current: data.DC_Current || 0,
+          dc_voltage: data.DC_Voltage || 0
         };
         setLiveData(mappedData);
         updateSineWaveData(mappedData);
+        updateDcData(mappedData);
         updateHarmonicData(mappedData);
         updateMlPredictions(mappedData);
         checkAlerts(mappedData);
@@ -143,6 +154,23 @@ function App() {
         current: newCurrent,
         voltage: newVoltage,
         power: newPower
+      };
+    });
+  };
+  
+  const updateDcData = (data) => {
+    const time = new Date().toLocaleTimeString();
+    
+    setDcData(prev => {
+      const maxPoints = 20;
+      const newLabels = [...prev.labels, time].slice(-maxPoints);
+      const newDcCurrent = [...prev.dc_current, data.dc_current].slice(-maxPoints);
+      const newDcVoltage = [...prev.dc_voltage, data.dc_voltage].slice(-maxPoints);
+      
+      return {
+        labels: newLabels,
+        dc_current: newDcCurrent,
+        dc_voltage: newDcVoltage
       };
     });
   };
@@ -304,6 +332,32 @@ function App() {
         data: sineWaveData.power,
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.4,
+      },
+    ],
+  };
+  
+  const dcCurrentChartData = {
+    labels: dcData.labels,
+    datasets: [
+      {
+        label: 'DC Current (A)',
+        data: dcData.dc_current,
+        borderColor: 'rgb(255, 159, 64)',
+        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+        tension: 0.4,
+      },
+    ],
+  };
+  
+  const dcVoltageChartData = {
+    labels: dcData.labels,
+    datasets: [
+      {
+        label: 'DC Voltage (V)',
+        data: dcData.dc_voltage,
+        borderColor: 'rgb(153, 102, 255)',
+        backgroundColor: 'rgba(153, 102, 255, 0.2)',
         tension: 0.4,
       },
     ],
@@ -490,6 +544,24 @@ function App() {
                 <div className="card-unit">Status</div>
               </div>
             </div>
+            
+            <div className="data-card dc-current">
+              <div className="card-icon">🔆</div>
+              <div className="card-content">
+                <h3>DC Current</h3>
+                <div className="card-value">{(liveData.dc_current || 0).toFixed(4)}</div>
+                <div className="card-unit">Amperes</div>
+              </div>
+            </div>
+            
+            <div className="data-card dc-voltage">
+              <div className="card-icon">🔋</div>
+              <div className="card-content">
+                <h3>DC Voltage</h3>
+                <div className="card-value">{(liveData.dc_voltage || 0).toFixed(4)}</div>
+                <div className="card-unit">Volts</div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -617,7 +689,7 @@ function App() {
 
         {/* Sine Wave Charts Section */}
         <section className="charts-section">
-          <h2>Real-time Waveforms</h2>
+          <h2>Real-time Waveforms (AC)</h2>
           <div className="charts-grid">
             <div className="chart-container">
               <h3>Current Waveform</h3>
@@ -632,6 +704,22 @@ function App() {
             <div className="chart-container">
               <h3>Power Waveform</h3>
               <Line data={powerChartData} options={chartOptions} />
+            </div>
+          </div>
+        </section>
+        
+        {/* DC Charts Section */}
+        <section className="charts-section dc-section">
+          <h2>DC Power Monitoring</h2>
+          <div className="charts-grid">
+            <div className="chart-container">
+              <h3>DC Current Trend</h3>
+              <Line data={dcCurrentChartData} options={chartOptions} />
+            </div>
+            
+            <div className="chart-container">
+              <h3>DC Voltage Trend</h3>
+              <Line data={dcVoltageChartData} options={chartOptions} />
             </div>
           </div>
         </section>
